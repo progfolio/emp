@@ -61,6 +61,42 @@ If SOCKET is provided, use that socket file instead of creating a new one."
         (sleep-for 0.1)))
     (list (puthash name player emp--players))))
 
+(defun emp--parse-time-string (time-string)
+  "Convert TIME-STRING into list of form:
+\\(milliseconds seconds minutes hours)."
+  (let ((components
+         (nreverse
+          (flatten-tree
+           (mapcar (lambda (component) (split-string component "\\."))
+                   (split-string time-string ":"))))))
+    (setq components
+          (if (string-match "\\(?:\\.\\([[:digit:]]+\\)\\)" time-string)
+              (push (* (string-to-number (concat "0." (match-string 1 time-string)))
+                       1000)
+                    (cdr components))
+            (push 0 components)))
+    (unless (= (seq-reduce (lambda (acc char)
+                            (+ acc (if (string= char ":") 1 0)))
+                          (split-string time-string "" 'omit-nulls)
+                          0)
+               2)
+      (setq components (append components '(0))))
+    (mapcar (lambda (component) (if (stringp component)
+                                    (string-to-number component)
+                                  component))
+            components)))
+
+(defun emp--time-string-to-ms (time)
+  "Convert TIME to ms."
+  (let ((places '(1 1000 60000 3600000))
+        (index 0))
+    (truncate
+     (apply #'+
+            (mapcar
+             (lambda (unit)
+               (prog1 (* unit (nth index places)) (cl-incf index)))
+             (emp--parse-time-string time))))))
+
 (defun emp--compact-time-formatter (h m s ms)
   "Return shortest time string from H M S MS."
   (concat
@@ -208,7 +244,7 @@ For the players.
 (defun emp-open-file (&optional file)
   "Play FILE with currently selected players.
 If called interactively, prompt for one relative to `emp-video-directory'.
-When called with \[universal-argument], prompt relative to `default-directory'.
+When called with \\[universal-argument], prompt relative to `default-directory'.
 If no players are started, start one and use that."
   (interactive (list (read-file-name "Play media: "
                                      (ignore-errors (file-name-as-directory
@@ -275,6 +311,18 @@ When called from elisp FLAGS may be:
   "Insert current playback time."
   (interactive)
   (insert (emp-playback-time)))
+
+(defun emp-speed-set (factor)
+  "Set playback speed to FACTOR.
+If called interactively with \\[universal-argument] reset speed to 1."
+  (interactive (list (if current-prefix-arg 1 (read-number "Factor: "))))
+  (emp-set-property "speed" (abs factor)))
+
+(defun emp-seek-absolute (time)
+  "Seek to absolute TIME."
+  (interactive "MTime: ")
+  (emp-send-command (emp-players) "osd-msg-bar" "seek"
+                    (/ (emp--time-string-to-ms time) 1000) "absolute"))
 
 (provide 'emp)
 
