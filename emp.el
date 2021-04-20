@@ -151,24 +151,23 @@ It is called with hours, minutes, seconds, milliseconds."
 (defun emp--select-players (&optional prompt)
   "PROMPT for players if more than one, else return player list.
 If `emp--selected-players' is non-nil, return that player list instead."
-  (emp--update-player-metadata (emp-players 'all))
   (cond
    ((zerop (hash-table-count emp--players)) (user-error "No MPV process running"))
    (emp--selected-players emp--selected-players)
    ((= (hash-table-count emp--players) 1)
     (hash-table-values emp--players))
-   (t (emp--ensure-list
-       (mapcar (lambda (key) (get-text-property 0 'emp-player key))
+   (t
+    (emp--update-player-metadata (emp-players 'all))
+    (emp--ensure-list
+     (let ((candidates (mapcar (lambda (player)
+                                 (cons (emp--player-selection-info player) player))
+                               (hash-table-values emp--players))))
+       (mapcar (lambda (selection) (alist-get selection candidates nil nil #'string=))
                (emp--ensure-list
-                (funcall (if current-prefix-arg
-                             #'completing-read-multiple
-                           #'completing-read)
+                (funcall (if current-prefix-arg #'completing-read-multiple #'completing-read)
                          (or prompt "Select Player: ")
-                         (mapcar (lambda (player)
-                                   (propertize (emp--player-selection-info player)
-                                               'emp-player player))
-                                 (hash-table-values emp--players))
-                         nil 'require-match)))))))
+                         candidates
+                         nil 'require-match))))))))
 
 (defun emp-set-context ()
   "Set the MPV process context.
