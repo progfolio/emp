@@ -343,6 +343,12 @@ If called interactively with \\[universal-argument] reset speed to 1."
   (interactive)
   (emp-send-command (emp-players) "no-osd" "cycle-values" "osd-level" "3" "1"))
 
+(defun emp-playlist-reverse ()
+  "Reverse player's playlist."
+  (interactive)
+  (dotimes (n (plist-get (car (emp-get-property "playlist-count")) :data))
+    (emp-send-command (emp-players) "playlist-move" (1+ n) 0)))
+
 (defun emp-play-url-at-point ()
   "Play URL at point."
   (interactive)
