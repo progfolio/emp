@@ -76,9 +76,9 @@ If SOCKET is provided, use that socket file instead of creating a new one."
                     (cdr components))
             (push 0 components)))
     (unless (= (seq-reduce (lambda (acc char)
-                            (+ acc (if (string= char ":") 1 0)))
-                          (split-string time-string "" 'omit-nulls)
-                          0)
+                             (+ acc (if (string= char ":") 1 0)))
+                           (split-string time-string "" 'omit-nulls)
+                           0)
                2)
       (setq components (append components '(0))))
     (mapcar (lambda (component) (if (stringp component)
@@ -245,9 +245,10 @@ For the players.
 If called interactively, prompt for one relative to `emp-video-directory'.
 When called with \\[universal-argument], prompt relative to `default-directory'.
 If no players are started, start one and use that."
-  (interactive (list (read-file-name "Play media: "
-                                     (ignore-errors (file-name-as-directory
-                                                     (unless current-prefix-arg emp-video-directory))))))
+  (interactive (list (read-file-name
+                      "Play media: "
+                      (ignore-errors (file-name-as-directory
+                                      (unless current-prefix-arg emp-video-directory))))))
   (emp-send-command (or (emp-players) (emp--start))
                     "loadfile" (expand-file-name file) "append-play"))
 (defun emp-pause ()
