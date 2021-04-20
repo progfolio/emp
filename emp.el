@@ -253,8 +253,8 @@ For the players.
   "Play URL at point."
   (interactive)
   (if-let ((url (thing-at-point-url-at-point)))
-      (emp-open-url url))
-  (user-error "Point not on a recognized URL."))
+      (emp-open-url url)
+    (user-error "Point not on a recognized URL.")))
 
 ;;;###autoload
 (defun emp-open-file (file)
