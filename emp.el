@@ -170,14 +170,16 @@ If `emp--selected-players' is non-nil, return that player list instead."
                          candidates
                          nil 'require-match))))))))
 
-(defun emp-set-context ()
-  "Set the MPV process context.
-Commands that usually prompt when multiple processes are running
-will only use the current context process."
-  (interactive)
-  (setq emp--selected-players
-        (let ((emp--selected-players nil))
-          (emp--select-players "MPV context: "))))
+(defun emp-set-context (players)
+  "Set the MPV PLAYERS context.
+Commands that usually prompt when multiple players are running
+will only use the value of `emp--selected-players'."
+  (interactive (list (let ((emp--selected-players nil))
+                       (emp--select-players "MPV context: "))))
+  (setq emp--selected-players (if (or (null players)
+                                      (equal players '(nil)))
+                                  nil
+                                players)))
 
 (defun emp-kill (players)
   "Kill PLAYERS.
