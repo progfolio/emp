@@ -249,6 +249,14 @@ For the players.
   (emp-send-command (or (emp-players) (emp--start)) "loadfile" url "append-play"))
 
 ;;;###autoload
+(defun emp-open-url-at-point ()
+  "Play URL at point."
+  (interactive)
+  (if-let ((url (thing-at-point-url-at-point)))
+      (emp-open-url url))
+  (user-error "Point not on a recognized URL."))
+
+;;;###autoload
 (defun emp-open-file (file)
   "Play FILE with currently selected players.
 If called interactively, prompt for one relative to `emp-video-directory'.
@@ -260,6 +268,16 @@ If no players are started, start one and use that."
                                       (unless current-prefix-arg emp-video-directory))))))
   (emp-send-command (or (emp-players) (emp--start))
                     "loadfile" (expand-file-name file) "append-play"))
+
+;;;###autoload
+(defun emp-open ()
+  "Open FILE-OR-URL.
+If point is on a URL delegate to `emp-open-url', else `emp-open-file'."
+  (interactive)
+  (call-interactively (if (thing-at-point-url-at-point)
+                          #'emp-open-url-at-point
+                        #'emp-open-file)))
+
 (defun emp-pause ()
   "Cycle pause for currently selected players."
   (interactive)
@@ -349,13 +367,6 @@ If called interactively with \\[universal-argument] reset speed to 1."
   (interactive)
   (dotimes (n (plist-get (car (emp-get-property "playlist-count")) :data))
     (emp-send-command (emp-players) "playlist-move" (1+ n) 0)))
-
-(defun emp-play-url-at-point ()
-  "Play URL at point."
-  (interactive)
-  (if-let ((url (thing-at-point-url-at-point)))
-      (emp-open-url url))
-  (user-error "Point not on a recognized URL."))
 
 (provide 'emp)
 
