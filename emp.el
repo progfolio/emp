@@ -335,6 +335,11 @@ When called from elisp FLAGS may be:
     (unless players (user-error "No players selected"))
     (emp-send-command players "osd-msg-bar" "seek" (number-to-string (truncate time)) "relative+exact")))
 
+(defun emp-revert-seek ()
+  "Undo the last seek."
+  (interactive)
+  (emp-send-command (emp-players) "osd-msg-bar" "revert-seek"))
+
 (defun emp-playback-time ()
   "Return current playback time."
   (let ((time (plist-get (car (emp-get-property "playback-time")) :data)))
