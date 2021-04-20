@@ -242,6 +242,7 @@ For the players.
         (emp--select-players "Select Players: ")
       ((user-error) nil))))
 
+;;;###autoload
 (defun emp-open-url (url)
   "Open URL with selected players."
   (interactive "sURL: ")
