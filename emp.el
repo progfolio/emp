@@ -246,7 +246,7 @@ For the players.
   (emp-send-command (or (emp-players) (emp--start)) "loadfile" url "append-play"))
 
 ;;;###autoload
-(defun emp-open-file (&optional file)
+(defun emp-open-file (file)
   "Play FILE with currently selected players.
 If called interactively, prompt for one relative to `emp-video-directory'.
 When called with \\[universal-argument], prompt relative to `default-directory'.
