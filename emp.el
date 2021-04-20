@@ -300,6 +300,12 @@ Indices are 0 indexed and may optionally be any of the following:
   (interactive (list (emp--read-playlist)))
   (emp-send-command (emp-players) "playlist-play-index" (number-to-string (truncate index))))
 
+;;@TODO: this (or maybe a emp-seek-read command) should interpret relative,
+;;absolute and percent based notation.
+;;.e.g.
+;; seeking relative: -1:00 or +2:00
+;; seeking absolute: 2:22
+;; seeking percentage: %50 or 50%
 (defun emp-seek (time &optional _flags)
   "Seek to TIME.
 When called from elisp FLAGS may be:
