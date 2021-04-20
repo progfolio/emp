@@ -3,6 +3,7 @@
 ;;; Commentary:
 ;;
 (eval-when-compile (require 'subr-x))
+(require 'thingatpt)
 
 ;;; Code:
 (dolist (executable '("socat"))
@@ -239,6 +240,11 @@ For the players.
         (emp--select-players "Select Players: ")
       ((user-error) nil))))
 
+(defun emp-open-url (url)
+  "Open URL with selected players."
+  (interactive "sURL: ")
+  (emp-send-command (or (emp-players) (emp--start)) "loadfile" url "append-play"))
+
 ;;;###autoload
 (defun emp-open-file (&optional file)
   "Play FILE with currently selected players.
@@ -323,6 +329,13 @@ If called interactively with \\[universal-argument] reset speed to 1."
   (interactive "MTime: ")
   (emp-send-command (emp-players) "osd-msg-bar" "seek"
                     (/ (emp--time-string-to-ms time) 1000) "absolute"))
+
+(defun emp-play-url-at-point ()
+  "Play URL at point."
+  (interactive)
+  (if-let ((url (thing-at-point-url-at-point)))
+      (emp-open-url url))
+  (user-error "Point not on a recognized URL."))
 
 (provide 'emp)
 
