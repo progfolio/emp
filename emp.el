@@ -325,15 +325,46 @@ Indices are 0 indexed and may optionally be any of the following:
 ;; seeking relative: -1:00 or +2:00
 ;; seeking absolute: 2:22
 ;; seeking percentage: %50 or 50%
-(defun emp-seek (time &optional _flags)
+(defun emp-seek (time)
   "Seek to TIME.
-When called from elisp FLAGS may be:
-- absolute
-- relative"
-  (interactive "p")
+When called with a numeric prefix argument, seek relative that many seconds.
+Else, TIME should be a string of the following form (sections in brackets are
+optional):
+[H:][MM:][S][.MS]
+
+And may be prefix/suffixed in any of the folloing ways:
+- N% seek to N percent of the file.
+- +N seek forward N seconds.
+- -N seek backward N seconds.
+- N seek to the asbolute time denoted by N."
+  (interactive "MSeek: ")
   (let ((players (emp-players)))
     (unless players (user-error "No players selected"))
-    (emp-send-command players "osd-msg-bar" "seek" (number-to-string (truncate time)) "relative+exact")))
+    (if current-prefix-arg
+        (emp-send-command players "osd-msg-bar" "seek"
+                          (number-to-string (truncate time)) "relative+exact")
+      (let* ((relative-positive (string-prefix-p "+" time))
+             (relative-negative (string-prefix-p "-" time))
+             (percentage (string-suffix-p "%" time))
+             (time (cond
+                    (relative-positive (/ (emp--time-string-to-ms
+                                           (substring time 1))
+                                          1000))
+                    (relative-negative (* (/ (emp--time-string-to-ms
+                                              (substring time 1))
+                                             1000)
+                                          -1))
+                    (percentage (string-to-number (substring time nil -1)))
+                    (t (/ (emp--time-string-to-ms time) 1000)))))
+        (emp-send-command players "osd-msg-bar" "seek"
+                          (number-to-string time)
+                          (concat
+                           (cond
+                            ((or relative-positive relative-negative)
+                             "relative")
+                            (percentage "absolute-percent")
+                            (t "absolute"))
+                           "+exact"))))))
 
 (defun emp-revert-seek ()
   "Undo the last seek."
