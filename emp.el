@@ -338,6 +338,11 @@ If called interactively with \\[universal-argument] reset speed to 1."
   (emp-send-command (emp-players) "osd-msg-bar" "seek"
                     (/ (emp--time-string-to-ms time) 1000) "absolute"))
 
+(defun emp-cycle-osd ()
+  "Cycle the osd-level."
+  (interactive)
+  (emp-send-command (emp-players) "no-osd" "cycle-values" "osd-level" "3" "1"))
+
 (defun emp-play-url-at-point ()
   "Play URL at point."
   (interactive)
