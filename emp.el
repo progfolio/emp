@@ -337,7 +337,7 @@ And may be prefix/suffixed in any of the folloing ways:
 - +N seek forward N seconds.
 - -N seek backward N seconds.
 - N seek to the asbolute time denoted by N."
-  (interactive "MSeek: ")
+  (interactive (list (or current-prefix-arg (read-string "Seek: "))))
   (let ((players (emp-players)))
     (unless players (user-error "No players selected"))
     (if current-prefix-arg
