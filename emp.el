@@ -27,7 +27,7 @@ another reason. It is the maximum of seconds we will poll before giving up and
 throwing an error."
   :type (or 'interger 'float))
 
-(defcustom emp-video-directory "~/Videos"
+(defcustom emp-video-directory "~/Videos/"
   "Default directory to search for videos when using `emp-open-file'."
   :type 'directory)
 
