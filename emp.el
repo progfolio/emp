@@ -283,6 +283,11 @@ If point is on a URL delegate to `emp-open-url', else `emp-open-file'."
   (interactive)
   (emp-send-command (emp-players) "osd-msg-bar" "cycle" "pause"))
 
+(defun emp-fullscreen ()
+  "Cycle fullscren for currently selected players."
+  (interactive)
+  (emp-send-command (emp-players) "osd-msg-bar" "cycle" "fullscreen"))
+
 (defun emp-playlist-next ()
   "Got to next entry in the selected players' playlists."
   (interactive)
