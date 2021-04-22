@@ -18,6 +18,11 @@
 (defvar emp--players (make-hash-table :test 'equal) "Table of mpv processes.")
 (defvar emp--player-count 0 "Internal counter to keep track of proccesses.")
 (defvar emp--selected-players nil "The current MPV context.")
+(defvar emp--socket-dir (let ((name (file-name-as-directory
+                                     (expand-file-name "emp" (temporary-file-directory)))))
+                          (make-directory name 'parents)
+                          name)
+  "The directory for storing socket files.")
 
 (defcustom emp-start-poll-timeout 5
   "Freshly strated MPV processes may not recieve commands immediately.
@@ -30,6 +35,32 @@ throwing an error."
 (defcustom emp-video-directory "~/Videos/"
   "Default directory to search for videos when using `emp-open-file'."
   :type 'directory)
+
+(defcustom emp-players-file "/tmp/emp-players.el"
+  "Where to save the emp players."
+  :type 'file)
+
+(defun emp-save-players ()
+  "Save `emp--players' to disk."
+  (interactive)
+  (with-temp-buffer
+    (let (print-level print-length)
+      (insert (pp-to-string emp--players))
+      (write-region (point-min) (point-max) emp-players-file))))
+
+(defun emp--read-file (file)
+  "Read FILE into an elisp object."
+  ;;@FIX: we need to be more robust here.
+  (ignore-errors
+    (read (with-temp-buffer
+            (insert-file-contents file)
+            (buffer-string)))))
+
+;;;###autoload
+(defun emp-load-players ()
+  "Load players from `emp--players-file'."
+  (interactive)
+  (setq emp--players (emp--read-file emp-players-file)))
 
 (defun emp--ensure-list (obj)
   "If OBJ is not a list of players, make it one.
@@ -45,18 +76,24 @@ Also used to with differences between `completing-read-multiple' and `completing
 If NAME is nil, autogenerate a numeric one.
 If SOCKET is provided, use that socket file instead of creating a new one."
   (let* ((name (or name (format "emp%d" (setq emp--player-count (1+ emp--player-count)))))
-         (socket (or socket (make-temp-file (format "%s-" name) nil ".emp")))
-         (process (make-process :name name
-                                :command (list
-                                          "mpv"
-                                          "--idle=yes"
-                                          "--keep-open=yes"
-                                          "--no-terminal"
-                                          ;;maybe not
-                                          "--force-window"
-                                          (format "--input-ipc-server=%s" socket))
-                                :noquery t))
-         (player (list :socket socket :process process :name name)))
+         (socket (or socket (let ((temporary-file-directory emp--socket-dir))
+                              (make-temp-file (format "%s-" name) nil ".emp"))))
+         (player (list :socket socket :name name)))
+    (make-process :name name
+                  :command (list "bash" "-c"
+                                 (string-join
+                                  (list "nohup"
+                                        "mpv"
+                                        "--idle=yes"
+                                        "--no-terminal"
+                                        ;;maybe not
+                                        ;;"--keep-open=yes"
+                                        "--force-window"
+                                        (format "--input-ipc-server=%s"
+                                                (shell-quote-argument socket))
+                                        "&> /dev/null")
+                                  " "))
+                  :noquery t)
     (with-timeout (emp-start-poll-timeout (error "Unable to start MPV"))
       (while (null (car (emp-send-command (list player) "emp-test")))
         (sleep-for 0.1)))
@@ -188,6 +225,7 @@ Prompt if PLAYERS is nil and more than one process is running."
   (dolist (player (emp--ensure-list players))
     (ignore-errors
       (kill-process (plist-get player :process)))
+    (emp-send-command (list player) "quit-watch-later")
     (when-let ((socket (plist-get player :socket)))
       (when (file-exists-p socket) (delete-file socket)))
     (when (eq (car emp--selected-players) player)
