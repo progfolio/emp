@@ -79,6 +79,27 @@ Also used to with differences between `completing-read-multiple' and `completing
    ((keywordp (car obj)) (list obj))
    (t obj)))
 
+(defun emp-send-command (players &rest command)
+  "Send PLAYERS COMMAND."
+  (unless (and (listp players) (not (null players))) (signal 'wrong-type-argument `(listp ,players)))
+  (mapcar (lambda (player)
+            (when-let ((socket (plist-get player :socket))
+                       (message (concat (json-serialize (list :command (apply #'vector command)))
+                                        "\n"))
+                       (result (with-temp-buffer
+                                 (call-process-region message nil "socat" nil t t "-" socket)
+                                 (buffer-string))))
+              ;; if the process is unresponsive, return nil
+              (unless (string-empty-p result)
+                (if (string-match-p "Connection Refused" result)
+                    (let ((socket (plist-get player :socket)))
+                      (delete-file socket)
+                      (apply #'emp-send-command (emp--start (plist-get player :name)) command))
+                  (json-parse-string result
+                                     :object-type 'plist
+                                     :array-type 'list)))))
+          players))
+
 (defun emp--start (&optional name socket)
   "Start an IPC enabled MPV process named NAME.
 If NAME is nil, autogenerate a numeric one.
@@ -194,6 +215,19 @@ It is called with hours, minutes, seconds, milliseconds."
                      (plist-get player :playback-time))
                " "))
 
+(defun emp-players (&optional all)
+  "Return the list of currently selected players.
+If ALL is non-nil, return all players.
+If only one player is started, return a list containing that.
+If more than one player is started, but none is selected, prompt the user
+For the players.
+  Note the results are always contained in a list even if one player is returned."
+  (if all
+      (hash-table-values emp--players)
+    (condition-case _
+        (emp--select-players "Select Players: ")
+      ((user-error) nil))))
+
 (defun emp--select-players (&optional prompt)
   "PROMPT for players if more than one, else return player list.
 If `emp--selected-players' is non-nil, return that player list instead."
@@ -240,27 +274,6 @@ Prompt if PLAYERS is nil and more than one process is running."
       (setq emp--selected-players nil))
     (remhash (plist-get player :name) emp--players)))
 
-(defun emp-send-command (players &rest command)
-  "Send PLAYERS COMMAND."
-  (unless (and (listp players) (not (null players))) (signal 'wrong-type-argument `(listp ,players)))
-  (mapcar (lambda (player)
-            (when-let ((socket (plist-get player :socket))
-                       (message (concat (json-serialize (list :command (apply #'vector command)))
-                                        "\n"))
-                       (result (with-temp-buffer
-                                 (call-process-region message nil "socat" nil t t "-" socket)
-                                 (buffer-string))))
-              ;; if the process is unresponsive, return nil
-              (unless (string-empty-p result)
-                (if (string-match-p "Connection Refused" result)
-                    (let ((socket (plist-get player :socket)))
-                      (delete-file socket)
-                      (apply #'emp-send-command (emp--start (plist-get player :name)) command))
-                  (json-parse-string result
-                                     :object-type 'plist
-                                     :array-type 'list)))))
-          players))
-
 (defun emp-get-property (property)
   "Return PROPERTY data for PLAYERS."
   (emp-send-command (emp-players) "get_property" property))
@@ -269,24 +282,12 @@ Prompt if PLAYERS is nil and more than one process is running."
   "Set PROPERTY to VAL for seledcted players."
   (emp-send-command (emp-players) "set_property" property val))
 
+;;;###autoload
 (defun emp-start (&optional name)
   "Start an MPV process named NAME.
 If NAME is nil, automatically generate process name."
   (interactive "MName: ")
   (emp--start name))
-
-(defun emp-players (&optional all)
-  "Return the list of currently selected players.
-If ALL is non-nil, return all players.
-If only one player is started, return a list containing that.
-If more than one player is started, but none is selected, prompt the user
-For the players.
-  Note the results are always contained in a list even if one player is returned."
-  (if all
-      (hash-table-values emp--players)
-    (condition-case _
-        (emp--select-players "Select Players: ")
-      ((user-error) nil))))
 
 ;;;###autoload
 (defun emp-open-url (url)
