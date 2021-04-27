@@ -56,6 +56,14 @@ throwing an error."
             (insert-file-contents file)
             (buffer-string)))))
 
+(defun emp--detect-players ()
+  "Scan `emp--socket-dir' and reattach to any sockets found."
+  (dolist (file (cl-remove-if (lambda (file) (member file '("." "..")))
+                              (directory-files emp--socket-dir)))
+    (let ((name (replace-regexp-in-string "-.*\\.emp" "" file)))
+      (puthash name (list :name name :socket (expand-file-name file emp--socket-dir))
+               emp--players))))
+
 ;;;###autoload
 (defun emp-load-players ()
   "Load players from `emp--players-file'."
