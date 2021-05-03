@@ -60,9 +60,8 @@ throwing an error."
   "Scan `emp--socket-dir' and reattach to any sockets found."
   (dolist (file (cl-remove-if (lambda (file) (member file '("." "..")))
                               (directory-files emp--socket-dir)))
-    (let ((name (replace-regexp-in-string "-.*\\.emp" "" file)))
-      (puthash name (list :name name :socket (expand-file-name file emp--socket-dir))
-               emp--players))))
+      (puthash file (list :name file  :socket (expand-file-name file emp--socket-dir))
+               emp--players)))
 
 ;;;###autoload
 (defun emp-load-players ()
@@ -173,7 +172,7 @@ If SOCKET is provided, use that socket file instead of creating a new one."
    (when (> ms 0) (format ".%03d" ms))))
 
 (defun emp--format-ms (n)
-  "Format N milliseconds with `speedo-time-formatter'.
+  "Format N milliseconds as timestamp.
 If FORMATTER is non-nil, use that format function instead.
 It is called with hours, minutes, seconds, milliseconds."
   (let* ((milliseconds (mod n 1000))
