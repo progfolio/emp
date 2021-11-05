@@ -60,8 +60,8 @@ throwing an error."
   "Scan `emp--socket-dir' and reattach to any sockets found."
   (dolist (file (cl-remove-if (lambda (file) (member file '("." "..")))
                               (directory-files emp--socket-dir)))
-      (puthash file (list :name file  :socket (expand-file-name file emp--socket-dir))
-               emp--players)))
+    (puthash file (list :name file  :socket (expand-file-name file emp--socket-dir))
+             emp--players)))
 
 ;;;###autoload
 (defun emp-load-players ()
