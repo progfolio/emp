@@ -72,7 +72,7 @@ throwing an error."
 (defun emp--ensure-list (obj)
   "If OBJ is not a list of players, make it one.
 This is to deal with a single player.
-Also used to with differences between `completing-read-multiple' and `completing-read' results."
+Normalizes `completing-read-multiple' and `completing-read' results."
   (cond
    ((stringp obj) (list obj))
    ((keywordp (car obj)) (list obj))
@@ -220,7 +220,7 @@ If ALL is non-nil, return all players.
 If only one player is started, return a list containing that.
 If more than one player is started, but none is selected, prompt the user
 For the players.
-  Note the results are always contained in a list even if one player is returned."
+Note the results are always contained in a list even if one player is returned."
   (if all
       (hash-table-values emp--players)
     (condition-case _
