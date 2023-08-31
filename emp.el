@@ -80,7 +80,7 @@ Normalizes `completing-read-multiple' and `completing-read' results."
 
 (defun emp-send-command (players &rest command)
   "Send PLAYERS COMMAND."
-  (unless (and (listp players) (not (null players))) (signal 'wrong-type-argument `(listp ,players)))
+  (or (consp players) (signal 'wrong-type-argument `(cons ,players)))
   (mapcar (lambda (player)
             (when-let ((socket (plist-get player :socket))
                        (message (concat (json-serialize (list :command (apply #'vector command)))
