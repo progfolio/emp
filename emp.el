@@ -6,7 +6,7 @@
 (require 'thingatpt)
 
 ;;; Code:
-(dolist (executable '("socat"))
+(dolist (executable '("socat" "mpv"))
   (unless (executable-find executable)
     (user-error "Executable %S not found on PATH" executable)))
 
